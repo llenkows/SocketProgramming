@@ -1,48 +1,66 @@
 import socket
-from threading import Thread
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
+from Crypto.Random import get_random_bytes
+import os
 
-TCP_IP = 'localhost'
-TCP_PORT = 9001
-BUFFER_SIZE = 1024
-
-
-class ClientThread(Thread):
-
-    def __init__(self, ip, port, sock):
-        Thread.__init__(self)
-        self.ip = ip
-        self.port = port
-        self.sock = sock
-        print(" New thread started for "+ip+":"+str(port))
-
-    def run(self):
-        filename = 'anon234.jpeg'
-        f = open(filename, 'rb')
-        while True:
-            l = f.read(BUFFER_SIZE)
-            while (l):
-                self.sock.send(l)
-                #print('Sent ',repr(l))
-                l = f.read(BUFFER_SIZE)
-            if not l:
-                f.close()
-                self.sock.close()
-                break
+# AES key for encryption (must be 16, 24, or 32 bytes)
+key = b'This is a key123'  # Ensure the key length is correct
 
 
-tcpsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-tcpsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-tcpsock.bind((TCP_IP, TCP_PORT))
-threads = []
+def encrypt_data(data, key):
+    """
+    Encrypts data using AES in CBC mode with padding.
 
-while True:
-    tcpsock.listen(5)
-    print("Waiting for incoming connections...")
-    (conn, (ip, port)) = tcpsock.accept()
-    print('Got connection from ', (ip, port))
-    newthread = ClientThread(ip, port, conn)
-    newthread.start()
-    threads.append(newthread)
+    Parameters:
+        data (bytes): The plaintext data to encrypt.
+        key (bytes): The AES encryption key.
 
-for t in threads:
-    t.join()
+    Returns:
+        bytes: The IV prepended to the ciphertext.
+    """
+    # TODO: Generate a random initialization vector (IV)
+
+    # TODO: Create a new AES cipher in CBC mode using the key and IV
+
+    # TODO: Pad the data to match AES block size and encrypt
+
+    # Return IV + encrypted data
+    return None  # Replace with actual return statement after completing encryption
+
+
+def start_server():
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind(("0.0.0.0", 9999))
+    server_socket.listen(1)
+    print("Server listening on port 9999")
+
+    while True:
+        print("Waiting for a connection...")
+        client_socket, addr = server_socket.accept()
+        print(f"Connected by {addr}")
+
+        try:
+            # Receive the filename from the client
+            filename = client_socket.recv(1024).decode()
+            print(f"Client requested file: {filename}")
+
+            if os.path.isfile(filename):
+                with open(filename, "rb") as file:
+                    data = file.read()
+
+                    # TODO: Encrypt the file data before sending
+
+                    # TODO: Send encrypted data to the client
+                print(f"File '{filename}' sent to the client.")
+            else:
+                client_socket.send("File not found.".encode())
+                print("File not found.")
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            client_socket.close()
+            print("Connection closed.")
+
+
+start_server()
